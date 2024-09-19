@@ -1,0 +1,199 @@
+%{
+HW 3
+Programmer: Chris Baker
+Due Date: 4/22/2022, extended to 4/25/2022
+UID: 105180929
+
+Script Details:
+This script is designed to run a switch statement that will
+prompt the use to enter the problem number for which they
+desire to evaluate. The first problem is the Three Species
+Problem while the second is the Pocket Change Problem.
+Further, details on each problem are provided in their
+comment sections.
+%}
+
+% Opening Pseudocode - collect user input
+clc; clear;
+%% User Input
+user_choice = input("Enter the desired problem using\n" + ...
+    "1: Three Species Problem\n" + ...
+    "2: Pocket Change Problem\n" + ...
+    "Enter 1 or 2 here: ");
+
+switch user_choice
+    case 1
+        fprintf("Enter 1 for default values of populations: 10, 5, 2.5\nEnter 2 to put in your own values\n");
+        selection = input("User Input: ");
+        if selection == 1
+            % Initial Conditions at t=0
+            xi = 10 ; yi = 5; zi = 2.5;
+            % Timestep
+            dt = 10e-6; %10 ^ -6
+        elseif selection == 8
+            xi = 10 ; yi = 5; zi = 2.5; tsel = 10^-3;dt = tsel;
+        elseif selection == 9
+            xi = 10 ; yi = 5; zi = 2.5; tsel = 10^-6;dt = 0.05;
+          
+        else
+            xsel = input("Enter population value for x: ");
+            if (xsel < 0)
+                error ("Enter a nonnegative population value")
+            end
+            ysel = input("Enter population value for y: ");         
+            if (ysel < 0)
+                error ("Enter a nonnegative population value")
+            end
+            zsel = input("Enter population value for z: ");
+            if (zsel < 0)
+                error ("Enter a nonnegative population value")
+            end
+            tsel = input("Enter desired timestep: ");
+            if (tsel < 0)
+                error ("Enter a nonnegative population value")
+            end
+            
+            xi = xsel; yi = ysel; zi = zsel; dt = tsel;
+        end
+        
+        % First guess
+        xK = xi; yK = yi; zK = zi;
+        
+        % Time FInal
+        iter = 0; t = 0; tfinal = 20;
+        % toleramce
+        tol = 10e-12;
+        time_counter = 0;
+        clc;
+     
+        fprintf('  Time       X       Y       Z       it\n');
+        fprintf(' %5.1f   %5.2f   %5.2f   %5.2f\n', 0, xK, yK, zK);
+        tic;
+        % Backard Euler
+        for time = 0:dt:tfinal
+            %t = t + dt;
+            iter = iter + 1; %iteration update
+            % Predictor Equations for K + 1
+            xK1 = xK + (xK*(1 - xK/10) - 0.75*xK*yK - 2*xK*zK)*dt;
+            yK1 = yK + (1.5*yK*(1 - yK/5) - 0.5*yK*xK - 1.5*yK*zK)*dt;
+            zK1 = zK + (3*zK*(1 - zK/2.5) - 1.5*zK*xK - 0.5*zK*yK)*dt;
+
+         
+            %arbitrary setting greater then tolerance
+            diffx = 20; diffy = 20; diffz = 20;
+
+            % Corrector
+            it = 0;
+
+            while abs(diffx) > tol || abs(diffy) > tol || abs(diffz) > tol
+                it = it + 1;
+
+                % Create new eqns for k+1
+                xK1_new = xK + (xK1*(1 - xK1/10) - 0.75*xK1*yK1 - 2*xK1*zK1)*dt;
+                yK1_new = yK + (1.5*yK1*(1 - yK1/5) - 0.5*yK1*xK1 - 1.5*yK1*zK1)*dt;
+                zK1_new = zK + (3*zK1*(1 - zK1/2.5) - 1.5*zK1*xK1 - 0.5*zK1*yK1)*dt;
+
+                % Take the difference of terms
+                diffx = xK1_new - xK1;
+                diffy = yK1_new - yK1;
+                diffz = zK1_new - zK1;
+
+                % Update k+1 to new terms
+                xK1 = xK1_new;
+                yK1 = yK1_new;
+                zK1 = zK1_new;
+            end
+            % THen update the present K term to k+1 terms
+            xK = xK1;
+            yK = yK1;
+            zK = zK1;
+
+            % print timestamps at 1a intervals
+            if mod(iter, 1/dt) == 0
+                %fprintf('  Time       X       Y       Z       it\n');
+                fprintf(' %5.1f   %5.2f   %5.2f   %5.2f   %5.2f\n', time, xK, yK, zK, it);
+            end
+        end
+        T = toc;
+        fprintf("Total time for delta %.6f is %.10f a \n", dt, T);
+
+       
+    case 2
+      %% Coin Problem Part 1
+        
+        qcnt = 0; q2 = 0;
+        dcnt = 0; d2= 0;
+        ncnt = 0; n2= 0;
+        pcnt = 0; p2 = 0;
+        for coin_values = 0:1:99 % displays 0 to 99
+            change = coin_values;
+            while change > 0                
+                if change >= 25    
+                    change = change - 25; qcnt = qcnt + 1;
+                elseif change >= 10                      
+                    change = change - 10; dcnt = dcnt + 1;                
+                elseif change >= 5                    
+                    change = change - 5;  ncnt = ncnt + 1;             
+                elseif change >= 1                       
+                    change = change - 1;  pcnt = pcnt + 1;
+                end 
+            end
+        end
+        coin_count = qcnt + ncnt + dcnt + pcnt;
+        avg = (coin_count)/100; 
+        fprintf("Average Number of Coins = %.2f\n", avg);
+
+        %% Coin Problem Part 2
+        for coins2 = 0:1:99 % displays 0 to 99
+            rem = coins2;
+            qrem = 0; drem = 0; nrem = 0; prem = 0;
+            while rem > 0                            
+                if rem >= 25                                                              
+                        q2 = q2 + floor(rem/25);                                    
+                        rem = mod(rem,25);
+                end
+                if rem >= 10                                                              
+                        d2 = d2 + floor(rem/10);                                    
+                        rem = mod(rem,10);
+                end
+                if rem >= 5                                                              
+                       n2 = n2 + floor(rem/5);                                    
+                        rem = mod(rem,5);
+                end
+                if rem >= 1                                                              
+                        p2 = p2 + floor(rem/1);                                    
+                        rem = mod(rem,1);
+                end
+              
+            end
+        end
+        avg2 = (q2 + d2 + n2 + p2)/100;
+        fprintf("Average Number of Coins = %.2f\n", avg2);
+
+        %% Coin Problem Part 3
+        q3=0; n3=0; d3 = 0;
+        for coins2 = 0:5:95 % displays 0 to 99
+            rem = coins2;
+            
+            while rem > 0                            
+                if rem >= 25                                                              
+                        q3 = q3 + floor(rem/25);                                    
+                        rem = mod(rem,25);
+                end
+                if rem >= 10                                                              
+                        d3 = d3 + floor(rem/10);                                    
+                        rem = mod(rem,10);
+                end
+                if rem >= 5                                                              
+                       n3 = n3 + floor(rem/5);                                    
+                        rem = mod(rem,5);
+                end
+              
+            end
+        end
+        avg3 = (q3 + d3 + n3 )/20;
+        fprintf("Average Number of Coins = %.2f\n", avg3);
+end
+
+
+
