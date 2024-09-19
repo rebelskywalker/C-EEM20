@@ -1,0 +1,356 @@
+%{
+HW 7
+Programmer: Chris Baker
+Due Date: 5/20/2022
+UID: 105180929
+
+Script Details:
+This script is designed to run a switch statement that will
+prompt the use to enter the problem number for which they
+desire to evaluate. 
+
+The first problem demonstrates the Game of Life Problem. Select
+1 when prompted to access this problem.
+
+The second problem demonstrates the Euler Beam Problem. Select
+2 when prompted to access this problem.
+
+Further, details on each problem are provided in their
+comment sections.
+
+%}
+
+
+%%  Clear Cache
+clear all
+close all
+clc
+
+%% User Input
+fprintf("*********************************************************************\n");
+user_choice = input("Enter the desired problem using\n" + ...
+    "1: The Game of Life Problem\n" + ...
+    "2: The Euler Beam Problem\n" + ...
+    "Enter 1 or 2 here: ");
+fprintf("*********************************************************************\n");
+
+while(user_choice~=1 && user_choice~=2)
+    fprintf('Invalid: Please enter a 1 for problem 1 or a 2 for problem 2.\n');
+    user_choice=input('Type the number 1 for problem 1 or type 2 for problem 2:');
+end
+switch user_choice
+    %% Game Of Life Problem
+%     The Game of Life was developed by the British Mathematician John 
+% Conway in the late 1900s and simulates cellular automation. This zero 
+% player game allows the user to select which cells or representative objects 
+% are designated to be living. Any cells that are unselected in the grid are 
+% dead cells. Depending on the state of the target cell and the neighboring 
+% cells around it will determine the next state of the cell itself and 
+% neighboring cells.
+% 
+% In our implementation of the game we calculate a cell's survival state 
+% based on the 8 nearest neighbors including edgecase wrap around. The 
+% neighbors created around a target cell are arranged in a square pattern of 
+% 8 cells. The grid itself is set to 100 x 200 cells as stated in the 
+% assignment.The rules that we follow include that a cell can be one of two 
+% states: dead = 0, alive = 1. A living cell with fewer than 2 or more then 
+% 3 living neighbors will not survive the next generation. A dead cell with 
+% exactly 3 living neighbors becomes a living cell in the next generation.
+    case 1
+        %% Initializations
+
+        % Capture initial run, ued generaton looping instead of flags
+        %bflag = 1; eflag = 0;
+        % Capture initial vs ending counts to verify we counted every cell
+        % as well as the beginning and ending values to ensure correct logic.
+        init_alive = 0;
+        init_dead = 0;
+        end_alive = 0;
+        end_dead = 0;
+        % Current alive cell count
+        alive_cell_count = 0;
+        
+        % Initialize num generations
+        num_gen = 500;
+        % Initialize Grid of Cells (rows,col)
+        num_rows = 100;
+        num_cols = 200;
+        % Create the grid, originally with all zero values
+        mygrid = zeros(num_rows, num_cols);
+
+        % Create an array to hold values
+        alive = zeros(1, num_gen);
+        % modify to access first element
+        gen_index = 1;
+        
+        % Create random val for random living cell assignment
+        m = 10000;
+
+        % Only Create 10% of cells to be alive
+        for row = 1:num_rows
+            for col = 1:num_cols
+                % Creates a random float with 4 digit precision [0 1]
+                rand_val = randi(m)/m;
+                % Tests if value is greater or equal to 0.9, roughly
+                % 10 percent chance to assign living cell.
+                if (rand_val >= 0.9 )
+                    mygrid(row, col) = 1;
+                    alive_cell_count = alive_cell_count + 1;
+                end
+            end
+        end
+        alive(gen_index) = alive_cell_count;
+
+        % run simulation for 500 generations
+        gens = 1;
+        while gens < num_gen
+            gen_index = gen_index + 1;
+            alive_cell_count = 0;
+            newGrid = mygrid;
+            for row = 1:num_rows
+                for col = 1:num_cols
+                    % Assign values of the current cell and also
+                    % instantiate the sum for sorrounding cells to be 0 for
+                    % recalculation
+                    currentCell = mygrid(row, col);
+                    sum_neighbor_cells = 0;
+
+                    % Handle index for neighbor cells
+                    N = row - 1;
+                    S = row + 1;
+                    E = col + 1;
+                    W = col - 1;
+
+                    % Handle edge cases
+                    if N < 1
+                        N = num_rows;
+                    end
+                    if S > num_rows
+                        S = 1;
+                    end
+                    if W < 1
+                        W = num_cols;
+                    end
+                    if E > num_cols
+                        E = 1;
+                    end
+
+                    % Find values of initial cells
+                    if gens == 1
+                        if currentCell == 1
+                            init_alive = init_alive + 1; 
+                        elseif currentCell == 0
+                            init_dead = init_dead + 1;
+                        end
+                    end
+                    % Find values of ending cells
+                     if gens == num_gen -1 
+                        if currentCell == 1
+                            end_alive = end_alive + 1; 
+                        elseif currentCell == 0
+                            end_dead = end_dead + 1;
+                        end
+                    end
+
+                    % Take sume value
+                    sums = zeros(1,3);
+                    % Handle Grid Neighbor SUmmations including wrap around
+                    sums(1) = mygrid(N, W) + mygrid(N, col) + mygrid(N, E);
+                    sums(2) = mygrid(S, W) + mygrid(S, col) + mygrid(S, E);
+                    sums(3) = mygrid(row, W) + mygrid(row, E);
+                    % Collect Sum of Sums
+                    sum_neighbor_cells = sum(sums);
+                    % Assign Next generation values
+                    %if (gens ~= 0  && gens ~= num_gen - 1)
+                        % update current cell
+                        if currentCell == 1 && sum_neighbor_cells ~= 2 && sum_neighbor_cells ~= 3 %&& sum_neighbor_cells ~= 1 
+                            newGrid(row, col) = 0;
+                        elseif currentCell == 0 && sum_neighbor_cells == 3 %||sum_neighbor_cells == 4 || sum_neighbor_cells == 5) 
+                            newGrid(row, col) = 1;
+%                         elseif sums(1) < 1
+%                             newGrid(row, col) = 1;
+                        end
+                    %end
+                end
+            end
+            % update grid
+            mygrid = newGrid;
+            for row = 1:num_rows
+                for col = 1:num_cols
+
+                    if mygrid(row, col) == 1
+                        alive_cell_count = alive_cell_count + 1;
+%                     elseif grid(row, col) == 0
+%                         deadCells = deadCells + 1;
+%                     end
+                    end
+                end
+            end
+            alive(gen_index) = alive_cell_count;
+            gens = gens + 1;
+
+            % animate results
+            imagesc(mygrid);
+            drawnow;
+
+            % plot number of living cells as a function of time
+            plot(alive);
+            xlabel("N Generations"); ylabel("Number of Alive Cells");
+            title("Living Cells Over N Generations");
+        end %% end while
+        %saveas(gcf,'hw7_p1_e4.pdf');
+        cell_total = num_rows*num_cols;
+        exp_per = .10* cell_total;
+        per_err = abs((exp_per - init_alive)/exp_per)*100;
+        % Correctly prints the end alive
+         fprintf("**************************Initial Counts********************************\n");
+         fprintf("Initital Count of (Alive Cells, Dead Cells): (%d,%d)\n", init_alive, init_dead);
+         fprintf("A %d by %d grid should have %d cells, which is the sum of above cells\n", num_rows, num_cols, cell_total);
+         fprintf("Exactly 10 Percent of %d is %f\n", cell_total, exp_per);
+         fprintf("Percent Error Diff from %d is a reasonable %f Percent\n", exp_per, per_err);
+         fprintf("*************************Ending Counts********************************\n");
+         fprintf("Final Count of (Alive Cells, Dead Cells): (%d,%d)\n", end_alive, end_dead);
+         fprintf("We end with %d Alive + %d Dead which = %d as expected\n", end_alive, end_dead, end_alive+end_dead);
+
+    case 2
+        %% Problem 2: 
+        % The Euler Beam Problem requires us to solve a linear system of equations 
+        % for nodal deflection of a supported beam. In our problem the beam 
+        % is constructed with a rectangular cross section and is subjected 
+        % to a particular load. From this problem we have derived second 
+        % order differential equations which take into consideration the 
+        % moment of inertia and Young's modulus. Instead of approaching the 
+        % problem from an analytical standpoint we employ a Taylor series 
+        % expansion of the deflection y. 
+
+        % To access this problem the user inputs 2 when prompted for the 
+        % problem choice. Then they will encounter another prompt asking 
+        % them how many nodes they wish to use in this problem. The nodes 
+        % are important in determining the number of dx intervals in our 
+        % implementation of calculus to solve for deflections. Then through 
+        % applying matrix operations and linear algebra systems of equations 
+        % to solve for the deflections we are able to finally compare the 
+        % percent value from the exact answer vs our approximated method. 
+        % A plot as well as the percent error is returned to the console 
+        % for user interpretation.
+        fprintf("Welcome to the Euler Beam Problem!\n");
+        fprintf("*********************************************************************\n");
+
+        %% Initializing
+        E = 70*(10^6);
+        L = 2;
+        w = .05; h = .07;
+        p = 3*10^3;
+        yi = 0;
+        h3 = h*h*h;
+        I = (w*h3)/12;
+       
+        %% Begin Part 1:
+        nflag = 1;
+        while nflag == 1
+            nnodes = input("Input number of nodes: ");
+            if (isnumeric(nnodes) == 0 || isnan(nnodes) || nnodes < 2)
+                fprintf("Please put in a node value 2 or greater. It must be numeric.\n");
+            else
+                nflag = 0;
+            end
+        end
+        
+
+        matrixA = zeros(nnodes-2, nnodes-2);
+        % Assigns diagonal to -2 and sub disagonal to 1
+        % Verified this! 
+        % made sure there is only 48 x 48 this time with TAs help
+        for i=1:nnodes-2
+            for j=1:nnodes-2
+                if i==j
+                    matrixA(i,j) = -2;
+                elseif (i == j-1 || j == i-1)
+                    matrixA(i,j) = 1;
+                end
+            end
+        end
+
+        % for deflection later, more intializations
+        d = 1.21;
+        % Determine Y exact using x=d
+        ds = d*d;
+        dc = d*d*d;
+        Lc = L^3;
+        yexact = ((-p*d)/(24*E*I))*(dc - 2*L*ds+ Lc);
+        %yexact = (p*d*(L-d))/(3*E*I*L) * (L*d - d*d);
+
+        x = linspace(0, L, nnodes);
+        dx = L/(nnodes-1); % x is a vector from 0 to L with intervals dx
+
+        % vector to bend moment at each node
+        % use element wise matrix multiplcation, didnt work with regular
+        % multiplication that was shown in pseudocode
+        % transposed, since dimensions didnt match for TA Pseudocode
+        x2 = x.^2;
+        Mdomain = (p*L*x)/2 - (p*x2)/2;
+        b = zeros(1,nnodes-2);
+        % Again fixed with TAs since b must be 48 vector
+        for bi =2:nnodes-1
+            b(bi-1) = dx*dx * Mdomain(bi) / (E * I);
+        end
+        %b = dx*dx * Mdomain / (E * I);
+        bt = transpose(b);
+
+        % Solving the linear system of equations
+        % Ay = b
+        yDomain = matrixA\bt;
+
+        y = zeros(nnodes);
+        M = zeros(nnodes);
+        %for k=2:nnodes-1
+        % Fixed this with Vivian and Yuhai, it now y and M
+        % take the domain values for index 2 to 49, while 1 and 50 are the
+        % boundary values.
+        for k=1:nnodes-2
+            y(k+1) = yDomain(k);
+            M(k+1) = Mdomain(k);
+        end
+
+        %% Part 2
+       
+        for i=1:nnodes-1
+            if x(i) <= d && x(i+1) > d
+                rise = y(i+1) - y(i);
+                run = x(i+1) - x(i);
+                slope = rise/run;
+                yD = y(i) + slope * (d - x(i));
+            end
+        end
+
+        rel_error = abs((yexact - yD)/yexact)*100;
+
+        fprintf("Relative Percentage Error when x = d is: %f\n", rel_error);
+
+
+        %% Confusion and PLotting
+        % Some students were confused on the group me about plotting for
+        % this assignment. The specs mentioned interpolate as a default,
+        % but I tried to look at the exact point along with some other
+        % students I think, because we were not sure if the assignment
+        % wanted us to try and highlight a dot in the curve at that point
+        % exactly. I modified the plotting for this and hopefully it is
+        % correct.
+
+        % deflection plot
+        subplot(2, 1, 1);
+        hold on;
+        grid on;
+        vq2 = interp1(x,y,1.21);
+        plot(x, y,'o',1.21,vq2,':.');
+        xlabel("X length"); ylabel("deflection");
+        title("Deflection Plot")
+
+        % moment plot
+        subplot(2, 1, 2);
+        vq1 = interp1(x, M, 1.21);
+        plot(x , M,'o',1.21,vq1,':.');
+        xlabel("X length"); ylabel("Moment")
+        title("Moment Plot Showing Interpolated Point d=x=1.21")
+        %saveas(gcf,"hw7_p2_400.png");
+end
