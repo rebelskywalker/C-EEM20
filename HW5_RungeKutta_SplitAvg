@@ -1,0 +1,373 @@
+%{
+HW 5
+Programmer: Chris Baker
+Due Date: 5/06/2022
+UID: 105180929
+
+Script Details:
+This script is designed to run a switch statement that will
+prompt the use to enter the problem number for which they
+desire to evaluate. 
+
+The first problem demonstrates the split average problem.
+THe average part also inputs
+averaged out pieces with weights based on the left and right neighbor
+including wrap around. The secon problem is the RUnge Kutta applied on free
+fall physics.
+
+Further, details on each problem are provided in their
+comment sections.
+
+%}
+
+
+%%  Clear Cache
+clear all
+close all
+clc
+
+%% User Input
+fprintf("*********************************************************************\n");
+user_choice = input("Enter the desired problem using\n" + ...
+    "1: The Split and Average Problem\n" + ...
+    "2: Runge Kutte Methods\n" + ...
+    "Enter 1 or 2 here: ");
+fprintf("*********************************************************************\n");
+
+while(user_choice~=1 && user_choice~=2)
+    fprintf('Invalid: Please enter a 1 for problem 1 or a 2 for problem 2.\n');
+    user_choice=input('Type the number 1 for problem 1 or type 2 for problem 2:');
+end
+switch user_choice
+    %% Split Average Problem
+    % This problem doubles the size of an array and then
+    %  fills the odd indicies with the original values from the input array
+    % then it adds averages to the even indicies to complete a new array xs.
+    % Another averaged array with weights, xa, is created by using the left
+    % and right neighbor along with corresponding weights to create
+    % averages wich fill in indicies cirresponding to xs. xa length is = to
+    % xs lenghth in these cases and both include wrap around features such
+    % that the next element of the last element is the first index, and the
+    % left element from the first element is the last index when using the formulas.
+    case 1
+        %%Problem 1
+        fprintf("Welcome to the Split and Average Problem!\n");
+        fprintf("*********************************************************************\n");
+        user_array = input("Enter 0 to check plots or\nEnter a space seperated array to view xs and xa outputs (I.E. [1 2 3] ): ");
+        fprintf("*********************************************************************\n");
+        size = length(user_array);
+        if user_array ~= 0
+            w = [1 2 3];
+            % For consistency in function later and this block of code
+            warr = w;
+            fprintf("w initialized to w = [1 2 3]\n");
+            fprintf("\nInput Array x: [ ");
+            for i=1:size
+                fprintf("%f ", user_array(i))
+            end
+            fprintf("]\n");
+            newxs = splitPoints(user_array);
+            fprintf("\nOutput Array xs: [ ")
+            for i=1:length(newxs)
+                fprintf("%f ", newxs(i));
+            end
+            fprintf("]\n");
+
+
+            newxa = averagePoints(newxs , w);
+            fprintf("\nOutput Array xa: [ ")
+            for i=1:length(newxa)
+                fprintf("%f ", newxa(i));
+            end
+            fprintf("]\n");
+
+        elseif user_array == 0
+
+            x1 = [0, 0, 1, 1];
+            y1 = [0, 1, 0, 1];
+            x2 = [100 200 300 400 500 600 700 800 900 1000 1100 1200 1300 1400 1500 1600];
+            y2 = [1 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768];
+            x3 = [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20];
+            y3 = [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40];
+            x0 = x1;
+            y0 = y1;
+
+            % Data set choice and error check
+            dchoice = input("Enter 1 for default data set, 2 for exp, and 3 for linear: ");
+            if dchoice == 1
+                x = x1; y = y1;
+            elseif dchoice == 2
+                x = x2; y = y2;
+            elseif dchoice == 3
+                x = x3; y = y3;
+            else
+                error("Error: Incorrect input for data choice");
+            end
+
+            % Check lengths on data sets
+            if length(x) ~= length(y)
+                fprintf("x has size %f, y has size %f\n", length(x), length(y));
+                error("Incorrect sizes for x and y ")
+            end
+            % Gather W array input and error check for non zero value
+            warr = input("Enter a space seperated array for W ( [1 1 1] ): ");
+            %Check again immediately before jumping into function
+            if sum(warr) == 0
+                error("Error: The sum of the w array must be a non zero value");
+            end
+            w = warr/sum(warr);
+
+
+            % Initialize variables
+            k = 0;
+            err = 100; tol = 10e-3;
+
+            %Iterate until max node displacement reaches a certain limit
+            while (err >= tol) && (k < 24)
+                xs = splitPoints(x);
+                ys = splitPoints(y);
+                xa = averagePoints(xs, w);
+                ya = averagePoints(ys, w);
+                x = xa;
+                y = ya;
+                %Check to see if max node displacement is too small
+                dx = xa - xs;
+                dy = ya - ys;
+                err = max(sqrt(dx.^2+dy.^2));
+                k = k + 1; %Increase count to track loop
+            end
+            fprintf("Index: %f, Error: %f", k, err);
+
+            % Plot the results
+            plot(x0,y0,'bo');
+            hold on
+            plot(x,y,'ro');
+            title('Split and Average Graph');
+            xlabel('x values');
+            ylabel('y values');
+            legend('Orig Vals', 'Final Vals');
+        end
+
+    case 2
+        %% Problem 2: Runge Kutta on Free Fall Problems
+        % This porblem uses several functions to solve a free fall problem.
+        % As opposed to elementary physics we take air resistance into
+        % account as well as a given cross sectional area, mass, gracity,
+        % air density, and drag coefficient to model a velocity versus time
+        % function. We also have the derivative of that function which
+        % yields an acceleration behavior as well as an initial state for
+        % velocity. By using the Runge Kutta methods we are able to compare
+        % the exact function to our estimated results in an effort to
+        % analyze how close we are to the correct value when comparing
+        % error values.
+        %% Initialize Constants
+        t0=0; tf=7; maxiter = 8;
+        dt = zeros(maxiter, 1);
+        dt(1) = 1;
+
+        v0=0;
+        dt1=1;
+        dt2=0.5;
+        dt3=0.25;
+        C_D = 0.47;
+        g = 32.174;
+        rho = 0.077;
+        m = 0.5;
+        A = 0.276;
+        vinf = sqrt((2*m*g)/(rho*C_D*A));
+
+        %% Handle Logic
+        % 1 first time, .5 second , .25 next ... only plot for these values
+
+        tex = t0:0.0001:tf;
+        nt=length(tex);
+        vex = zeros(1,nt);
+
+        % Following Lab g1-6
+        % Loop through time vector -1 to get vexact +  1 to exact solution
+        for k=1:nt-1
+            %vex(k+1) = vinf * tanh((g*k)/vinf);
+            vex(k+1) = vinf * tanh(g*tex(k+1)/vinf);
+        end
+
+        err1 = zeros(maxiter*3 - 1);
+        err2 = zeros(maxiter*3 - 1);
+        err3 = zeros(maxiter*3 - 1);
+        err4 = zeros(maxiter*3 - 1);
+
+        % Following Lab g1-6
+        % iterate through dt
+        % Outer for loop is for different dts
+        % this gives half value generally
+        for j = 1: maxiter
+            % initialize time array given for current dts
+            t = t0:dt(j):tf;
+            nt = length(t);
+            % 1 first time, .5 second , .25 next ... only plot for these values
+
+            %     tex = t0:0.0001:tf;
+            %     vex = zeros(1,nt);
+            %
+            %     fprintf("vex size: %f, vinf size: %f, t size: %f\n", length(vex), length(vinf), length(t));
+            %     % Following Lab g1-6
+            %     % Loop through time vector -1 to get vexact +  1 to exact solution
+            %     for k=1:nt-1
+            %         vex(k+1) = vinf * tanh((g*t)/vinf);
+            %     end
+
+
+            % Initialize Vectors to store Results for vk1, vk2 ...
+            % Following Lab g1-6
+            v1 = zeros(nt,1);
+            v1(1) = 0;
+            v2 = zeros(nt,1);
+            v2(1) = 0;
+            v3 = zeros(nt,1);
+            v3(1) = 0;
+            v4 = zeros(nt,1);
+            v4(1) = 0;
+
+            I = 0;
+            % Following Lab g1-6
+            for k = 1: nt -1
+                v1(k+1) = RungeKutta(1, g, rho, C_D,A, m, v1(k), dt(j));
+                v2(k+1) = RungeKutta(2, g, rho, C_D,A, m, v2(k), dt(j));
+                v3(k+1) = RungeKutta(3, g, rho, C_D,A, m, v3(k), dt(j));
+                v4(k+1) = RungeKutta(4, g, rho, C_D,A, m, v4(k), dt(j));
+
+                % TO only store for 2s, 4s, and 6 s can use an if statement
+                % Calculate Error for 2s. 4s, 6s
+                if t(k) >0 && mod(t(k),2) == 0
+                    I = I + 1;
+                    err1((j-1)*3 + I) = abs(1000*vex(k) - v1(k));
+                    err2((j-1)*3 + I) = abs(1000*vex(k) - v2(k));
+                    err3((j-1)*3 + I) = abs(1000*vex(k) - v3(k));
+                    err4((j-1)*3 + I) = abs(1000*vex(k) - v4(k));
+                end
+            end
+
+            % Plot results
+            % tex vs vex , t vs v1, t vs v2, t vs v3, t vs v4
+            % Ensures inky taking first three results for 1, 0.5, 0.25 dts
+            if j<4
+                plot(tex, vex);
+                hold on;
+                % First vk
+                plot(t, v1);
+                plot(t, v2);
+                plot(t, v3);
+                plot(t, v4);
+                xlabel('time'); ylabel('velocity(t)'); title('Velocity vs Time: RK methods');
+            end
+            % Updates dt by halving for next iteration
+            dt(j+1) = dt(j)/2;
+
+        end
+        % Print results
+        outputResults(1, err1, dt, maxiter);
+        outputResults(2, err2, dt, maxiter);
+        outputResults(3, err3, dt, maxiter);
+        outputResults(4, err4, dt, maxiter);
+
+end
+
+%% Initialize function
+% Handles the creation of RK formulas for the appropriate method of
+% rungekutta and also handles error checking as well as setting of vpk1
+% values.
+function [vkp1] = RungeKutta(method,g,rho,C_D,A,m,vk,dt)
+    function [out] = func(vk)
+        out = g - ((rho*C_D*A)/(2*m))*(vk*vk);
+    end
+if dt <= 0 || isnumeric(dt) ~= 1
+    error(" cant have negative dt or not numeric dt")
+end
+% f=-1*log(2)/2.45; %differential equation dy/dt
+switch method
+    case 1 %first order RungeKutta Method
+        c1=dt*func(vk);
+        vkp1=vk+c1;
+    case 2 % second order RungeKutta Method
+        c1=dt*func(vk);
+        c2=dt*func(vk + (0.5*c1));
+        vkp1=vk+c2;
+    case 3
+        c1=dt*func(vk);
+        c2=dt*func(vk + (0.5*c1));
+        c3=dt*func(vk-c1+(2*c2));
+        vkp1=vk+(1/6)*c1+(2/3)*c2+(1/6)*c3;
+    case 4 %fourth order RungeKutta Method
+        c1=dt*func(vk);
+        c2=dt*func(vk + (0.5*c1));
+        c3=dt*func(vk+(0.5*c2));
+        c4=dt*func(vk+c3);
+        vkp1=vk+(1/6)*c1+(1/3)*c2+(1/3)*c3+(1/6)*c4;
+    otherwise
+        fprintf('Invalid method. Select either method 1,2, 3, or 4\n');
+end
+end
+% Handles output results
+function outputResults(method,err,dt,maxIt)
+fprintf('               \tRK%d\n', method)
+fprintf('                 2s       4s       6s\n')
+maxiter = maxIt;
+for j = 1: maxiter - 1 - 4
+    fprintf('dt = %f', dt(j));
+    for k = 1: 3
+        fprintf(" %f", (err((j-1)*3 + k) / err(j*3 + k)))
+    end
+    fprintf("\n");
+end
+end
+
+
+% split function doubles in size and allocates the values at the original
+% position to the odd spots and fills in the remaining values with the next
+% consecutive spoit.
+function[xs]=splitPoints(x)
+n=length(x); xs=zeros(1,2*n);
+pos=1;
+for i=1:2:2*n
+    xs(i)=x(pos);
+    pos=pos+1;
+end
+% Average neighbors
+for m=2:2:2*n
+    % Last term case
+    if m==2*n
+        average=(xs(1)+xs(m-1))/2;
+        xs(m)=average;
+    end
+    % Between case
+    if m~=2*n
+        average=(xs(m-1)+xs(m+1))/2;
+        xs(m)=average;
+    end
+end
+end
+
+% Averages the function by taking the next step and scaling it by an
+% assigned weight from equations given in the homework spec
+function [xa] = averagePoints( xs, w)
+wsum = sum(w);
+%Check for the sum equaling zero
+if wsum == 0
+    error("ERROR: Zero sum for vector w components");
+end
+n=length(xs); xa=zeros(1,n);
+% Weight normalizaiton
+w = w/wsum;
+w1=w(1); w2=w(2); w3=w(3);
+% Averaging values step
+for i=1:1:length(xs)
+    if i==1
+        xa(i)=w1*xs(n)+w2*xs(i)+w3*xs(i+1);
+    end
+    if i==n
+        xa(i)=w1*xs(i-1)+w2*xs(i)+w3*xs(1);
+    end
+    if i>1 && i<n
+        xa(i)=w1*xs(i-1)+w2*xs(i)+w3*xs(i+1);
+    end
+end
+end
